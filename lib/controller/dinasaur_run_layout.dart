@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' as math;
 import 'dart:ui' as ui;
 
 import 'package:dinosaur_run/controller/location.dart';
@@ -8,7 +9,6 @@ import 'package:dinosaur_run/paint/dinosaur.dart';
 import 'package:dinosaur_run/paint/portrayal.dart';
 import 'package:dinosaur_run/paint/tree.dart';
 import 'package:flutter/material.dart';
-import 'dart:math' as math;
 
 ///动画状态
 enum GameState {
@@ -37,7 +37,7 @@ class _DinosaurRunLayoutState extends State<DinosaurRunLayout>
   GameState _gameState;
 
   ///移动速度。体现于每一动画帧移动距离
-  int _moveVelocityPerFrame = 2;
+  int _moveVelocityPerFrame = 3;
   int _maxMoveVelocityPerFrame = 8;
 
   ///物体移动动画
@@ -50,7 +50,6 @@ class _DinosaurRunLayoutState extends State<DinosaurRunLayout>
   ///恐龙跳跃动画
   AnimationController _dinosaurJumpAnimCtrl;
   Animation _dinosaurJumpAnim;
-  
 
   ///分数、难度控制器
   Timer _levelTimer;
@@ -63,8 +62,6 @@ class _DinosaurRunLayoutState extends State<DinosaurRunLayout>
 
   ///云朵位置列表
   List<Location> cloudList;
-  
-  
 
   //todo 构造函数
 
@@ -79,13 +76,7 @@ class _DinosaurRunLayoutState extends State<DinosaurRunLayout>
   }
 
   void initAnim() {
-    _moveAnim = AnimationController(
-        vsync: this, duration: Duration(seconds: 20));
-    _moveAnim.addStatusListener((status) {
-      if (status == AnimationStatus.completed) {
-        _moveAnim.forward(from: _moveAnim.lowerBound);
-      }
-    });
+    _moveAnim = AnimationController(vsync: this, duration: Duration(days: 1));
 
     _dinosaurRunAnim =
         AnimationController(vsync: this, duration: Duration(milliseconds: 100));
@@ -198,6 +189,8 @@ class _DinosaurRunLayoutState extends State<DinosaurRunLayout>
           updateTreeOffsetByAnim(location);
         }).toList();
 
+        treeProducer.tryProductTrees();
+
         return Stack(
           children: treeProducer.treeLists.map((location) {
             return Positioned(
@@ -255,25 +248,25 @@ class _DinosaurRunLayoutState extends State<DinosaurRunLayout>
 
   ///fixme
   void tap() {
-    switch (_gameState) {
-      case GameState.PLAYING:
-        break;
-      case GameState.GAMEOVER:
-        break;
-      case GameState.INIT:
-        break;
-    }
+//    switch (_gameState) {
+//      case GameState.PLAYING:
+//        break;
+//      case GameState.GAMEOVER:
+//        break;
+//      case GameState.INIT:
+//        break;
+//    }
     if (_moveAnim.isAnimating) {
 //      _levelTimer.cancel();
 //      _level = 1;
 //      _cloudAnim.stop();
     } else {
       _moveAnim.forward();
-      _levelTimer = Timer.periodic(Duration(seconds: 10), (timer) {
-        print('tick');
-        _moveVelocityPerFrame = math.min(_maxMoveVelocityPerFrame, ++_moveVelocityPerFrame);
+      _levelTimer = Timer.periodic(Duration(seconds: 15), (timer) {
+        _moveVelocityPerFrame =
+            math.min(_maxMoveVelocityPerFrame, ++_moveVelocityPerFrame);
       });
-      treeProducer.productTrees();
+      treeProducer.tryProductTrees();
     }
 
     if (_dinosaurRunAnim.isAnimating) {

@@ -18,44 +18,39 @@ class TreeProducer {
 
   TreeProducer(this.minBaseX, this.baseY);
 
-  void productTrees() {
-    _timer = Timer.periodic(Duration(milliseconds: 1000), (timer) {
-      _random ??= math.Random();
+  void tryProductTrees() {
+    _random ??= math.Random();
+    //当列表中最后一个树的位置都已经移动到控件内时，那么要在右侧控件外重新生产出一组树加入到列表。
+    bool needProduct = treeLists.length == 0 || treeLists.last.x < minBaseX;
 
-      //当列表中最后一个树的位置都已经移动到控件内时，那么要在右侧控件外重新生产出一组树加入到列表。
-      bool needProduct =
-          treeLists.length == 0 || treeLists.last.x < minBaseX;
+    if (needProduct) {
+      //每次生产10组树
+      double x = minBaseX;
+      for (int i = 0; i < 10; i++) {
+        //每组树间距[200,350]
+        x += Portrayal.pixelUnit * 200 +
+            _random.nextInt((Portrayal.pixelUnit * 150).toInt());
 
-      if (needProduct) {
-        //每次生产5组树
-        double x = minBaseX;
-        for (int i = 0; i < 5; i++) {
-          int a = _random.nextInt(4);
-          switch (a) {
-            case 0:
-              addTree1(x);
-              break;
-            case 1:
-              addTree2(x);
-              break;
-            case 2:
-              addTree3(x);
-              break;
-            case 3:
-              addTree4(x);
-              break;
-            case 4:
-              addTree5(x);
-              break;
-          }
-          //每组树间距[150,250]
-          x += Portrayal.pixelUnit * 150 +
-              _random.nextInt((Portrayal.pixelUnit * 100).toInt());
+        int a = _random.nextInt(4);
+        switch (a) {
+          case 0:
+            addTree1(x);
+            break;
+          case 1:
+            addTree2(x);
+            break;
+          case 2:
+            addTree3(x);
+            break;
+          case 3:
+            addTree4(x);
+            break;
+          case 4:
+            addTree5(x);
+            break;
         }
-
-        print('treeList size = ${treeLists.length}');
       }
-    });
+    }
   }
 
   void disponse() {
@@ -67,9 +62,7 @@ class TreeProducer {
         TreeType.TYPE_3,
         Tree.getWrapSize(TreeType.TYPE_3),
         baseX,
-        baseY - Tree
-            .getWrapSize(TreeType.TYPE_3)
-            .height);
+        baseY - Tree.getWrapSize(TreeType.TYPE_3).height);
     treeLists.add(location);
   }
 
@@ -78,9 +71,7 @@ class TreeProducer {
         TreeType.TYPE_1,
         Tree.getWrapSize(TreeType.TYPE_1),
         baseX,
-        baseY - Tree
-            .getWrapSize(TreeType.TYPE_1)
-            .height);
+        baseY - Tree.getWrapSize(TreeType.TYPE_1).height);
     treeLists.add(location);
   }
 
@@ -89,18 +80,14 @@ class TreeProducer {
         TreeType.TYPE_1,
         Tree.getWrapSize(TreeType.TYPE_1),
         baseX,
-        baseY - Tree
-            .getWrapSize(TreeType.TYPE_1)
-            .height);
+        baseY - Tree.getWrapSize(TreeType.TYPE_1).height);
     TreeLocation location2 = TreeLocation(
         TreeType.TYPE_2,
         Tree.getWrapSize(TreeType.TYPE_2),
-        location.x + Tree
-            .getWrapSize(TreeType.TYPE_1)
-            .width + Portrayal.pixelUnit,
-        baseY - Tree
-            .getWrapSize(TreeType.TYPE_2)
-            .height);
+        location.x +
+            Tree.getWrapSize(TreeType.TYPE_1).width +
+            Portrayal.pixelUnit,
+        baseY - Tree.getWrapSize(TreeType.TYPE_2).height);
     treeLists.add(location);
     treeLists.add(location2);
   }
@@ -110,29 +97,21 @@ class TreeProducer {
         TreeType.TYPE_1,
         Tree.getWrapSize(TreeType.TYPE_1),
         baseX,
-        baseY - Tree
-            .getWrapSize(TreeType.TYPE_1)
-            .height);
+        baseY - Tree.getWrapSize(TreeType.TYPE_1).height);
 
     TreeLocation location2 = TreeLocation(
         TreeType.TYPE_3,
         Tree.getWrapSize(TreeType.TYPE_3),
-        location.x + Tree
-            .getWrapSize(TreeType.TYPE_1)
-            .width + Portrayal.pixelUnit,
-        baseY - Tree
-            .getWrapSize(TreeType.TYPE_3)
-            .height);
+        location.x +
+            Tree.getWrapSize(TreeType.TYPE_1).width +
+            Portrayal.pixelUnit,
+        baseY - Tree.getWrapSize(TreeType.TYPE_3).height);
 
     TreeLocation location3 = TreeLocation(
         TreeType.TYPE_2,
         Tree.getWrapSize(TreeType.TYPE_2),
-        location2.x + Tree
-            .getWrapSize(TreeType.TYPE_3)
-            .width,
-        baseY - Tree
-            .getWrapSize(TreeType.TYPE_2)
-            .height);
+        location2.x + Tree.getWrapSize(TreeType.TYPE_3).width,
+        baseY - Tree.getWrapSize(TreeType.TYPE_2).height);
 
     treeLists.add(location);
     treeLists.add(location2);
@@ -144,39 +123,29 @@ class TreeProducer {
         TreeType.TYPE_1,
         Tree.getWrapSize(TreeType.TYPE_1),
         baseX,
-        baseY - Tree
-            .getWrapSize(TreeType.TYPE_1)
-            .height);
+        baseY - Tree.getWrapSize(TreeType.TYPE_1).height);
 
     TreeLocation location2 = TreeLocation(
         TreeType.TYPE_3,
         Tree.getWrapSize(TreeType.TYPE_3),
-        location.x + Tree
-            .getWrapSize(TreeType.TYPE_1)
-            .width + Portrayal.pixelUnit,
-        baseY - Tree
-            .getWrapSize(TreeType.TYPE_3)
-            .height);
+        location.x +
+            Tree.getWrapSize(TreeType.TYPE_1).width +
+            Portrayal.pixelUnit,
+        baseY - Tree.getWrapSize(TreeType.TYPE_3).height);
 
     TreeLocation location3 = TreeLocation(
         TreeType.TYPE_2,
         Tree.getWrapSize(TreeType.TYPE_2),
-        location2.x + Tree
-            .getWrapSize(TreeType.TYPE_3)
-            .width + Portrayal.pixelUnit,
-        baseY - Tree
-            .getWrapSize(TreeType.TYPE_2)
-            .height);
+        location2.x +
+            Tree.getWrapSize(TreeType.TYPE_3).width +
+            Portrayal.pixelUnit,
+        baseY - Tree.getWrapSize(TreeType.TYPE_2).height);
 
     TreeLocation location4 = TreeLocation(
         TreeType.TYPE_1,
         Tree.getWrapSize(TreeType.TYPE_1),
-        location3.x + Tree
-            .getWrapSize(TreeType.TYPE_2)
-            .width,
-        baseY - Tree
-            .getWrapSize(TreeType.TYPE_1)
-            .height);
+        location3.x + Tree.getWrapSize(TreeType.TYPE_2).width,
+        baseY - Tree.getWrapSize(TreeType.TYPE_1).height);
 
     treeLists.add(location);
     treeLists.add(location2);
@@ -189,5 +158,5 @@ class TreeLocation extends Location {
   TreeType treeType;
 
   TreeLocation(this.treeType, Size size, double x, double y)
-      :super(size, x, y);
+      : super(size, x, y);
 }
