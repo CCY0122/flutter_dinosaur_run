@@ -9,7 +9,6 @@ import 'package:dinosaur_run/paint/tree.dart';
 ///树 生产工厂
 class TreeProducer {
   List<TreeLocation> treeLists = [];
-  Timer _timer;
 
   ///最小初始x值，应当等于刚刚在右侧控件外的值（即控件宽度）
   double minBaseX;
@@ -27,11 +26,11 @@ class TreeProducer {
       //每次生产10组树
       double x = minBaseX;
       for (int i = 0; i < 10; i++) {
-        //每组树间距[200,350]
-        x += Portrayal.pixelUnit * 200 +
-            _random.nextInt((Portrayal.pixelUnit * 150).toInt());
+        //每组树间距[250,500]
+        x += Portrayal.pixelUnit * 250 +
+            _random.nextInt((Portrayal.pixelUnit * 250).toInt());
 
-        int a = _random.nextInt(4);
+        int a = _random.nextInt(5);
         switch (a) {
           case 0:
             addTree1(x);
@@ -53,9 +52,6 @@ class TreeProducer {
     }
   }
 
-  void disponse() {
-    _timer?.cancel();
-  }
 
   void addTree1(double baseX) {
     TreeLocation location = TreeLocation(
