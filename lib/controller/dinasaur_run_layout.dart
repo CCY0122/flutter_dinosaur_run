@@ -1,12 +1,14 @@
 import 'dart:async';
-import 'dart:math' as math;
 import 'dart:ui' as ui;
 
 import 'package:dinosaur_run/controller/location.dart';
+import 'package:dinosaur_run/controller/tree_producer.dart';
 import 'package:dinosaur_run/paint/cloud.dart';
 import 'package:dinosaur_run/paint/dinosaur.dart';
 import 'package:dinosaur_run/paint/portrayal.dart';
+import 'package:dinosaur_run/paint/tree.dart';
 import 'package:flutter/material.dart';
+import 'dart:math' as math;
 
 ///动画状态
 enum GameState {
@@ -34,12 +36,12 @@ class _DinosaurRunLayoutState extends State<DinosaurRunLayout>
   ///游戏状态
   GameState _gameState;
 
-  ///难度等级。体现在动画速度上
-  int _level = 0;
-  int _maxLevel = 6;
+  ///移动速度。体现于每一动画帧移动距离
+  int _moveVelocityPerFrame = 2;
+  int _maxMoveVelocityPerFrame = 8;
 
-  ///云朵移动动画
-  AnimationController _cloudAnim;
+  ///物体移动动画
+  AnimationController _moveAnim;
 
   ///恐龙跑步动画
   AnimationController _dinosaurRunAnim;
@@ -48,12 +50,21 @@ class _DinosaurRunLayoutState extends State<DinosaurRunLayout>
   ///恐龙跳跃动画
   AnimationController _dinosaurJumpAnimCtrl;
   Animation _dinosaurJumpAnim;
+  
 
   ///分数、难度控制器
   Timer _levelTimer;
 
   ///恐龙当前位置信息
   Location dinosaurLocation;
+
+  ///树 生产工厂
+  TreeProducer treeProducer;
+
+  ///云朵位置列表
+  List<Location> cloudList;
+  
+  
 
   //todo 构造函数
 
@@ -63,18 +74,16 @@ class _DinosaurRunLayoutState extends State<DinosaurRunLayout>
     MediaQueryData mediaQuery = MediaQueryData.fromWindow(ui.window);
     _layoutWidth = mediaQuery.size.width; //默认宽度为屏幕宽
 
+    treeProducer = TreeProducer(_layoutWidth, 140);
     initAnim();
   }
 
   void initAnim() {
-    _cloudAnim = AnimationController(
-        vsync: this, duration: getMoveDurationByLevel(_level));
-    _cloudAnim.addStatusListener((status) {
+    _moveAnim = AnimationController(
+        vsync: this, duration: Duration(seconds: 20));
+    _moveAnim.addStatusListener((status) {
       if (status == AnimationStatus.completed) {
-        if (getMoveDurationByLevel(_level) != _cloudAnim.duration) {
-          _cloudAnim.duration = getMoveDurationByLevel(_level);
-        }
-        _cloudAnim.forward(from: _cloudAnim.lowerBound);
+        _moveAnim.forward(from: _moveAnim.lowerBound);
       }
     });
 
@@ -96,8 +105,8 @@ class _DinosaurRunLayoutState extends State<DinosaurRunLayout>
     });
 
     _dinosaurJumpAnimCtrl =
-        AnimationController(vsync: this, duration: Duration(milliseconds: 300));
-    _dinosaurJumpAnim = Tween<double>(begin: 0, end: 80 * Portrayal.pixelUnit)
+        AnimationController(vsync: this, duration: Duration(milliseconds: 350));
+    _dinosaurJumpAnim = Tween<double>(begin: 0, end: 85 * Portrayal.pixelUnit)
         .animate(CurvedAnimation(
             parent: _dinosaurJumpAnimCtrl, curve: Curves.decelerate));
     _dinosaurJumpAnim.addStatusListener((status) {
@@ -107,72 +116,50 @@ class _DinosaurRunLayoutState extends State<DinosaurRunLayout>
     });
   }
 
-  ///根据当前难度计算出动画移动速度
-  Duration getMoveDurationByLevel(int level) {
-    //7 level : 4s -> 3.5 -> ,,, -> 1.5 -> 1s
-    int delta = 500;
-    return Duration(milliseconds: 4000 - delta * level);
-  }
-
   ///云朵布局
   Widget getClouds() {
+    cloudList ??= [
+      Location(Cloud.getWrapSize(), _layoutWidth / 3, 10),
+      Location(Cloud.getWrapSize(), _layoutWidth * 2 / 3, 30),
+      Location(Cloud.getWrapSize(), _layoutWidth, 20),
+    ];
     return AnimatedBuilder(
-      animation: _cloudAnim,
+      animation: _moveAnim,
       builder: (context, _) {
+        cloudList.map((location) {
+          updateCloudOffsetByAnim(
+              _layoutWidth + Cloud.getWrapSize().width, location);
+        }).toList();
         return Stack(
-          children: <Widget>[
-            Positioned(
-              left: calculateCloudOffsetByAnim(_cloudAnim,
-                  _layoutWidth + Cloud.getWrapSize().width, _layoutWidth / 3),
-              top: 10,
+          children: cloudList.map((location) {
+            return Positioned(
+              left: location.x,
+              top: location.y,
               child: CustomPaint(
                 painter: Cloud(),
                 size: Cloud.getWrapSize(),
               ),
-            ),
-            Positioned(
-              left: calculateCloudOffsetByAnim(
-                  _cloudAnim,
-                  _layoutWidth + Cloud.getWrapSize().width,
-                  _layoutWidth * 2 / 3),
-              top: 30,
-              child: CustomPaint(
-                painter: Cloud(),
-                size: Cloud.getWrapSize(),
-              ),
-            ),
-            Positioned(
-              left: calculateCloudOffsetByAnim(_cloudAnim,
-                  _layoutWidth + Cloud.getWrapSize().width, _layoutWidth),
-              top: 20,
-              child: CustomPaint(
-                painter: Cloud(),
-                size: Cloud.getWrapSize(),
-              ),
-            ),
-          ],
+            );
+          }).toList(),
         );
       },
     );
   }
 
   ///计算云朵所处位置的偏移量。云朵是从右向左移动，当向左移出屏幕时，要重新从右侧移入
-  double calculateCloudOffsetByAnim(
-      Animation animation, double totalDelta, double beginOffset) {
-    double result = beginOffset - (totalDelta * animation.value);
+  void updateCloudOffsetByAnim(double totalDelta, Location location) {
+    location.x -= _moveVelocityPerFrame;
 
     //云朵移出了左屏幕，从右侧重新移入
-    while (result < -Cloud.getWrapSize().width) {
-      result += totalDelta;
+    while (location.x < -Cloud.getWrapSize().width) {
+      location.x += totalDelta;
     }
-    return result;
   }
 
   ///恐龙布局
   Widget getDinosaur() {
-    double baseTopMargin = 130 - Dinosaur.getWrapSize().height * 0.8;
-    dinosaurLocation ??=
-        Location(Dinosaur.getWrapSize(), Offset(10, baseTopMargin));
+    double baseTopMargin = 140 - Dinosaur.getWrapSize().height;
+    dinosaurLocation ??= Location(Dinosaur.getWrapSize(), 10, baseTopMargin);
 
     return AnimatedBuilder(
       animation: _dinosaurJumpAnim,
@@ -180,13 +167,12 @@ class _DinosaurRunLayoutState extends State<DinosaurRunLayout>
         return AnimatedBuilder(
           animation: _dinosaurRunAnim,
           builder: (context, _) {
-            dinosaurLocation.coordinate =
-                Offset(10, baseTopMargin - _dinosaurJumpAnim.value);
+            dinosaurLocation.y = baseTopMargin - _dinosaurJumpAnim.value;
             return Stack(
               children: <Widget>[
                 Positioned(
-                  top: dinosaurLocation.coordinate.dy,
-                  left: dinosaurLocation.coordinate.dx,
+                  top: dinosaurLocation.y,
+                  left: dinosaurLocation.x,
                   child: CustomPaint(
                     painter:
                         Dinosaur(state: _dinosaurState ?? DinosaurState.STAND),
@@ -199,6 +185,43 @@ class _DinosaurRunLayoutState extends State<DinosaurRunLayout>
         );
       },
     );
+  }
+
+  ///树布局
+  Widget getTrees() {
+    return AnimatedBuilder(
+      animation: _moveAnim,
+      builder: (context, _) {
+        List<TreeLocation> treeListsCopy = treeProducer.treeLists.toList();
+        //遍历中涉及元素移除，使用copy进行遍历
+        treeListsCopy.map((location) {
+          updateTreeOffsetByAnim(location);
+        }).toList();
+
+        return Stack(
+          children: treeProducer.treeLists.map((location) {
+            return Positioned(
+              left: location.x,
+              top: location.y,
+              child: CustomPaint(
+                painter: Tree(type: location.treeType),
+                size: Tree.getWrapSize(location.treeType),
+              ),
+            );
+          }).toList(),
+        );
+      },
+    );
+  }
+
+  ///更新树所处位置的偏移量。树是从右向左移动，当向左移出屏幕时，要从队列里移除
+  void updateTreeOffsetByAnim(TreeLocation location) {
+    location.x -= _moveVelocityPerFrame;
+
+    //树移出了左屏幕，从队列里移除
+    if (location.x < -Tree.getWrapSize(location.treeType).width) {
+      treeProducer.treeLists.remove(location);
+    }
   }
 
   @override
@@ -223,6 +246,8 @@ class _DinosaurRunLayoutState extends State<DinosaurRunLayout>
           ),
           //恐龙
           getDinosaur(),
+          //树
+          getTrees(),
         ],
       ),
     );
@@ -238,16 +263,17 @@ class _DinosaurRunLayoutState extends State<DinosaurRunLayout>
       case GameState.INIT:
         break;
     }
-    if (_cloudAnim.isAnimating) {
+    if (_moveAnim.isAnimating) {
 //      _levelTimer.cancel();
 //      _level = 1;
 //      _cloudAnim.stop();
     } else {
-      _cloudAnim.forward();
+      _moveAnim.forward();
       _levelTimer = Timer.periodic(Duration(seconds: 10), (timer) {
-        print('timer ,level = $_level , tick = ${timer.tick}');
-        _level = math.min(++_level, _maxLevel);
+        print('tick');
+        _moveVelocityPerFrame = math.min(_maxMoveVelocityPerFrame, ++_moveVelocityPerFrame);
       });
+      treeProducer.productTrees();
     }
 
     if (_dinosaurRunAnim.isAnimating) {
