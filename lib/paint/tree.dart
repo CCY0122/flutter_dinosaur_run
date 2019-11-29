@@ -23,7 +23,7 @@ class Tree extends CustomPainter {
     _paint.color = color;
 
     double y = 0;
-    maps[type]?.map((line) {
+    maps[type].map((line) {
       line.asMap().forEach((index, unit) {
         if (unit == 1) {
           double x = (index + 1) * Portrayal.pixelUnit;

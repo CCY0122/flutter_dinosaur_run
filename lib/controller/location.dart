@@ -6,7 +6,8 @@ class Location {
   Size size;
 
   //坐标
-  Offset coordinate;
+  double x;
+  double y;
 
-  Location(this.size, this.coordinate);
+  Location(this.size, this.x, this.y);
 }

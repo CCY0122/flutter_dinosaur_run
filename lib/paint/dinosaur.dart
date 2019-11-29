@@ -25,7 +25,7 @@ class Dinosaur extends CustomPainter {
     _paint.color = color;
 
     double y = 0;
-    maps[state]?.map((line) {
+    maps[state].map((line) {
       line.asMap().forEach((index, unit) {
         if (unit == 1) {
           double x = (index + 1) * Portrayal.pixelUnit;
