@@ -1,14 +1,16 @@
-# dinosaur_run
+# 恐龙快跑 DinosaurRun
+
+像素风恐龙快跑小游戏。模仿自chrome浏览器网页失败页对应小游戏：[chrome://dino](chrome://dino) <br/>
 
 Pixel wind dinosaur-run small game.
 
-## Getting Started
+<br/>
+使用Flutter自定义绘制：CustomPainter完成恐龙等物体的绘制；<br/>
+使用Flutter动画：Animation、计时器Timer完成动画控制。
+<br/>
 
-This project is a starting point for a Dart
-[package](https://flutter.dev/developing-packages/),
-a library module containing code that can be shared easily across
-multiple Flutter or Dart projects.
+# 效果图
 
-For help getting started with Flutter, view our 
-[online documentation](https://flutter.dev/docs), which offers tutorials, 
-samples, guidance on mobile development, and a full API reference.
+![gif](https://github.com/CCY0122/flutter_dinosaur_run/blob/master/dinosaur_gif.gif)
+
+
