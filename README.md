@@ -14,3 +14,7 @@ Pixel wind dinosaur-run small game.
 ![gif](https://github.com/CCY0122/flutter_dinosaur_run/blob/master/dinosaur_gif.gif)
 
 
+<br/><br/>
+**本作品仅供个人学习，如涉及chrome、google等版权问题，将删除。**
+
+
