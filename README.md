@@ -6,7 +6,7 @@ Pixel wind dinosaur-run small game.
 
 <br/>
 使用Flutter自定义绘制：CustomPainter完成恐龙等物体的绘制；<br/>
-使用Flutter动画：Animation、计时器Timer完成动画控制。
+使用Flutter动画：Animation、计时器：Timer 完成动画控制。
 <br/>
 
 # 效果图
