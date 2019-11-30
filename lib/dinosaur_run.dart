@@ -47,7 +47,8 @@ class _DinosaurRunState extends State<DinosaurRun>
   int _maxMoveVelocityPerFrame = 10;
 
   ///物体移动动画
-  Timer _moveTimer;
+  AnimationController _moveAnim;
+  int lastMoveAnimUpdateTime;
 
   ///恐龙跑步动画
   AnimationController _dinosaurRunAnim;
@@ -89,6 +90,24 @@ class _DinosaurRunState extends State<DinosaurRun>
   }
 
   void initAnim() {
+    _moveAnim = AnimationController(vsync: this, duration: Duration(days: 1));
+    _moveAnim.addListener(() {
+      //因为动画每次回调间隔不明确，因此手动计算每次回调间隔帧数,然后换算出物体应当移动的距离
+      //问：为什么不用Timer.periodic()实现每16.6ms回调一次更新动画的做法呢？
+      //答：实测Timer回调间隔波动大（release版也一样,不知为何），动画肉眼可见的不匀速
+      if (lastMoveAnimUpdateTime == null) {
+        lastMoveAnimUpdateTime = DateTime.now().millisecondsSinceEpoch;
+        return;
+      }
+      //计算间隔了多少帧（16.6ms）
+      int nowTime = DateTime.now().millisecondsSinceEpoch;
+      double hasPassedFrameCount =
+          (nowTime - lastMoveAnimUpdateTime) / (1000 / 60);
+      lastMoveAnimUpdateTime = nowTime;
+//      print('hasPassedFrameCount = $hasPassedFrameCount'); //约1~3帧
+      moveTimerTick(hasPassedFrameCount);
+    });
+
     _dinosaurRunAnim =
         AnimationController(vsync: this, duration: Duration(milliseconds: 100));
     _dinosaurRunAnim.addStatusListener((status) {
@@ -118,19 +137,19 @@ class _DinosaurRunState extends State<DinosaurRun>
     });
   }
 
-  moveTimerTick(Timer timer) {
-    score++;
+  moveTimerTick(double hasPassedFrameCount) {
+    score++; //简单点，每次回调就+1分
     maxScore = max(score, maxScore);
 
     cloudList.map((location) {
-      updateCloudOffsetByAnim(
+      updateCloudOffsetByAnim(hasPassedFrameCount,
           _layoutWidth + Cloud.getWrapSize().width, location);
     }).toList();
 
     List<TreeLocation> treeListsCopy = treeProducer.treeLists.toList();
     //遍历中涉及元素移除，使用copy进行遍历
     treeListsCopy.map((location) {
-      updateTreeOffsetByAnim(location);
+      updateTreeOffsetByAnim(hasPassedFrameCount, location);
     }).toList();
 
     treeProducer.tryProductTrees();
@@ -146,10 +165,10 @@ class _DinosaurRunState extends State<DinosaurRun>
     }
   }
 
-
   ///计算云朵所处位置的偏移量。云朵是从右向左移动，当向左移出屏幕时，要重新从右侧移入
-  void updateCloudOffsetByAnim(double totalDelta, Location location) {
-    location.x -= _moveVelocityPerFrame;
+  void updateCloudOffsetByAnim(
+      double hasPassedFrameCount, double totalDelta, Location location) {
+    location.x -= _moveVelocityPerFrame * hasPassedFrameCount;
 
     //云朵移出了左屏幕，从右侧重新移入
     while (location.x < -Cloud.getWrapSize().width) {
@@ -157,17 +176,16 @@ class _DinosaurRunState extends State<DinosaurRun>
     }
   }
 
-
   ///更新树所处位置的偏移量。树是从右向左移动，当向左移出屏幕时，要从队列里移除
-  void updateTreeOffsetByAnim(TreeLocation location) {
-    location.x -= _moveVelocityPerFrame;
+  void updateTreeOffsetByAnim(
+      double hasPassedFrameCount, TreeLocation location) {
+    location.x -= _moveVelocityPerFrame * hasPassedFrameCount;
 
     //树移出了左屏幕，从队列里移除
     if (location.x < -Tree.getWrapSize(location.treeType).width) {
       treeProducer.treeLists.remove(location);
     }
   }
-
 
   bool isDie() {
     bool isDie = false;
@@ -207,8 +225,6 @@ class _DinosaurRunState extends State<DinosaurRun>
       }).toList(),
     );
   }
-
-
 
   ///恐龙布局
   Widget getDinosaur() {
@@ -256,7 +272,6 @@ class _DinosaurRunState extends State<DinosaurRun>
       }).toList(),
     );
   }
-
 
   @override
   Widget build(BuildContext context) {
@@ -317,17 +332,20 @@ class _DinosaurRunState extends State<DinosaurRun>
     switch (_gameState) {
       case GameState.INIT:
         reset();
-        _moveTimer = Timer.periodic(Duration(milliseconds: 16), moveTimerTick);
         _levelTimer = Timer.periodic(Duration(seconds: 15), (timer) {
           _moveVelocityPerFrame =
               min(++_moveVelocityPerFrame, _maxMoveVelocityPerFrame);
         });
         _dinosaurRunAnim.forward();
         _dinosaurJumpAnimCtrl.forward();
+        _moveAnim.forward();
         _gameState = GameState.PLAYING;
         widget.gameStatusListener?.call(_gameState, maxScore);
         break;
       case GameState.PLAYING:
+        if (_dinosaurJumpAnimCtrl.isAnimating) {
+          return;
+        }
         _dinosaurJumpAnimCtrl.forward();
         break;
       case GameState.GAMEOVER:
@@ -339,15 +357,16 @@ class _DinosaurRunState extends State<DinosaurRun>
 
   void stop() {
     _levelTimer?.cancel();
-    _moveTimer?.cancel();
     _dinosaurRunAnim.stop();
     _dinosaurJumpAnimCtrl.stop();
+    _moveAnim.stop();
   }
 
   void reset() {
     stop();
     score = 0;
     _moveVelocityPerFrame = 5;
+    lastMoveAnimUpdateTime = null;
     _dinosaurState = DinosaurState.STAND;
     treeProducer.treeLists.clear();
   }
@@ -355,9 +374,9 @@ class _DinosaurRunState extends State<DinosaurRun>
   @override
   void dispose() {
     _levelTimer?.cancel();
-    _moveTimer?.cancel();
     _dinosaurRunAnim.dispose();
     _dinosaurJumpAnimCtrl.dispose();
+    _moveAnim.dispose();
     super.dispose();
   }
 }
